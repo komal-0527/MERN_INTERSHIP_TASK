@@ -30,6 +30,7 @@ export const createTodo = async (req, res) => {
       name: normalizedName,
     });
 
+    // response
     res.status(201).json({
       success: true,
       message: "Todo created successfully",
@@ -42,21 +43,77 @@ export const createTodo = async (req, res) => {
     });
   }
 };
-
+// get all todos
 export const getAllTodo = async (req, res) => {
   try {
+    // find todos array
     const todos = await Todo.find();
-    if (!todos) {
+    // response
+    res.status(200).json({
+      success: true,
+      message: "Todos fetched successfully",
+      todos,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Server Error: ${error.message}`,
+    });
+  }
+};
+
+// delete todos bu id
+export const deleteTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const todo = await Todo.findById(id);
+    if (!todo) {
       return res.status(404).json({
         success: false,
-        message: "Todos not fetch because of Empty array",
+        message: "Todo not found",
+      });
+    }
+    await todo.deleteOne();
+    res.status(200).json({
+      success: true,
+      message: "todo delete successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Server Error: ${error.message}`,
+    });
+  }
+};
+
+export const updateTodo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, isCompleted } = req.body;
+
+    // Build update object dynamically
+    const updateData = {};
+    if (name) updateData.name = name.toLowerCase();
+    if (typeof isCompleted === "boolean") updateData.isCompleted = isCompleted;
+
+    // Find todo by id and update
+    const updatedTodo = await Todo.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true } // return the updated document
+    );
+
+    if (!updatedTodo) {
+      return res.status(404).json({
+        success: false,
+        message: "Todo not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Todos fetched successfully",
-      todos
+      message: "Todo updated successfully",
+      todo: updatedTodo,
     });
   } catch (error) {
     res.status(500).json({
